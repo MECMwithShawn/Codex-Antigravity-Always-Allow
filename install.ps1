@@ -673,6 +673,27 @@ async function executeAcceptCommandsForIDE() {
     )
 }
 
+function Apply-AntigravityAlwaysAllowState {
+    $stateScript = Join-Path $scriptDir "Set-AntigravityAlwaysAllow.ps1"
+    if (-not (Test-Path -LiteralPath $stateScript -PathType Leaf)) {
+        Write-Log "Set-AntigravityAlwaysAllow.ps1 not found. Skipping Antigravity state patch."
+        return
+    }
+
+    Write-Log ""
+    Write-Log "Applying Antigravity Always Allow state..."
+
+    $args = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $stateScript)
+    if ($DryRun) {
+        $args += "-DryRun"
+    }
+
+    & powershell @args
+    if ($LASTEXITCODE -ne 0) {
+        throw "Set-AntigravityAlwaysAllow.ps1 failed with exit code $LASTEXITCODE"
+    }
+}
+
 if ($Help) {
     Show-Usage
     exit 0
@@ -740,6 +761,7 @@ if ($didTouchAgSettings) {
 }
 
 Patch-AntigravityAutoAcceptExtension
+Apply-AntigravityAlwaysAllowState
 
 Write-Log ""
 if ($DryRun) {
