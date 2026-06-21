@@ -1,22 +1,2 @@
-# Secrets
-*.env
-*.pem
-*.key
-*token*
-*secret*
-
-# Local editor/system files
-.DS_Store
-Thumbs.db
-*.swp
-*.swo
-
-# Python
-__pycache__/
-*.pyc
-
-# Do not commit local plaintext token helper files
-TXT.txt
-
-# Local backup artifacts from installer
-*.bak.*
+*.bak-no-prompts-*
+*.backup-*
