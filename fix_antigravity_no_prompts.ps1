@@ -10,10 +10,10 @@ Applies the same no-prompts fixes used on this machine:
   - sandbox_mode = "danger-full-access"
 
 - C:\Users\<user>\.gemini\config\config.json
-  - global permission grants for unsandboxed commands, commands, reads, and writes
+  - global permission grants for unsandboxed commands, commands, reads, writes, URLs, and MCP
 
-- C:\Users\<user>\.gemini\config\projects\outside-of-project.json
-  - broad per-project grants
+- C:\Users\<user>\.gemini\config\projects\outside-of-project.json and all projects\*.json
+  - broad per-project grants (including all active and past workspace GUID configs)
   - eager execution / allow file access / turbo artifact review settings
 
 The script is idempotent and creates timestamped .bak files before editing.
@@ -212,35 +212,39 @@ function Ensure-GeminiGlobalConfig {
     Write-Step "updated Gemini global config: $Path"
 }
 
-function Ensure-GeminiOutsideProjectConfig {
+function Ensure-GeminiProjectConfig {
     param(
         [Parameter(Mandatory = $true)][string]$Path,
-        [Parameter(Mandatory = $true)][string[]]$RequiredGrants
+        [Parameter(Mandatory = $true)][string[]]$RequiredGrants,
+        [string]$DefaultId = "outside-of-project",
+        [string]$DefaultName = "Outside of Project"
     )
 
+    $fileName = Split-Path -Leaf $Path
     if ($VerifyOnly) {
         if (-not (Test-Path -LiteralPath $Path)) {
-            Write-Step "Gemini outside-project config missing: $Path"
+            Write-Step "Gemini project config missing: $Path"
             return
         }
         $raw = Get-Content -Raw -LiteralPath $Path
         foreach ($grant in $RequiredGrants) {
-            Write-Step "Gemini outside-project grant $grant present: $($raw.Contains($grant))"
+            Write-Step "Gemini project ($fileName) grant $grant present: $($raw.Contains($grant))"
         }
-        Write-Step "Gemini fileAccessPolicy allow present: $($raw.Contains('AGENT_SETTING_POLICY_ALLOW'))"
-        Write-Step "Gemini autoExecutionPolicy eager present: $($raw.Contains('CASCADE_COMMANDS_AUTO_EXECUTION_EAGER'))"
+        Write-Step "Gemini project ($fileName) fileAccessPolicy allow present: $($raw.Contains('AGENT_SETTING_POLICY_ALLOW'))"
+        Write-Step "Gemini project ($fileName) autoExecutionPolicy eager present: $($raw.Contains('CASCADE_COMMANDS_AUTO_EXECUTION_EAGER'))"
+        Write-Step "Gemini project ($fileName) artifactReviewMode turbo present: $($raw.Contains('ARTIFACT_REVIEW_MODE_TURBO'))"
         return
     }
 
     Ensure-Directory -Path (Split-Path -Parent $Path)
     $backup = Backup-File -Path $Path
     if ($backup) {
-        Write-Step "backed up Gemini outside-project config to $backup"
+        Write-Step "backed up Gemini project config ($fileName) to $backup"
     }
 
     $default = [ordered]@{
-        id = "outside-of-project"
-        name = "Outside of Project"
+        id = $DefaultId
+        name = $DefaultName
         permissionGrants = [ordered]@{
             permissionGrants = [ordered]@{
                 allow = @()
@@ -270,24 +274,36 @@ function Ensure-GeminiOutsideProjectConfig {
     $cfg["settings"]["artifactReviewMode"] = "ARTIFACT_REVIEW_MODE_TURBO"
 
     $cfg | ConvertTo-Json -Depth 40 | Set-Content -LiteralPath $Path
-    Write-Step "updated Gemini outside-project config: $Path"
+    Write-Step "updated Gemini project config: $Path"
 }
 
 $requiredGrants = @(
     "unsandboxed(*)",
     "command(*)",
     "read_file(*)",
-    "write_file(*)"
+    "write_file(*)",
+    "read_url(*)",
+    "mcp(*)"
 )
 
 $codexConfig = Join-Path $UserHome ".codex\config.toml"
 $geminiConfig = Join-Path $UserHome ".gemini\config\config.json"
-$outsideProjectConfig = Join-Path $UserHome ".gemini\config\projects\outside-of-project.json"
+$projectsDir = Join-Path $UserHome ".gemini\config\projects"
+$outsideProjectConfig = Join-Path $projectsDir "outside-of-project.json"
 
 Write-Step "user home: $UserHome"
 Ensure-CodexConfig -Path $codexConfig
 Ensure-GeminiGlobalConfig -Path $geminiConfig -RequiredGrants $requiredGrants
-Ensure-GeminiOutsideProjectConfig -Path $outsideProjectConfig -RequiredGrants $requiredGrants
+Ensure-Directory -Path $projectsDir
+
+# Update outside-of-project config
+Ensure-GeminiProjectConfig -Path $outsideProjectConfig -RequiredGrants $requiredGrants -DefaultId "outside-of-project" -DefaultName "Outside of Project"
+
+# Update all existing workspace project GUID configs
+$projectFiles = Get-ChildItem -Path $projectsDir -Filter "*.json" -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne "outside-of-project.json" }
+foreach ($file in $projectFiles) {
+    Ensure-GeminiProjectConfig -Path $file.FullName -RequiredGrants $requiredGrants -DefaultId ([System.IO.Path]::GetFileNameWithoutExtension($file.Name)) -DefaultName $file.BaseName
+}
 
 if (-not $VerifyOnly) {
     Write-Step "done. Fully restart Antigravity so the language server reloads these settings."

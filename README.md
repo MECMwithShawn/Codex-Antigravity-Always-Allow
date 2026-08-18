@@ -32,6 +32,7 @@ fix_antigravity_no_prompts.ps1
 %USERPROFILE%\.codex\config.toml
 %USERPROFILE%\.gemini\config\config.json
 %USERPROFILE%\.gemini\config\projects\outside-of-project.json
+%USERPROFILE%\.gemini\config\projects\*.json (all active project workspace GUID configs)
 ```
 
 It adds:
@@ -48,9 +49,14 @@ and broad Antigravity permission grants:
 "command(*)"
 "read_file(*)"
 "write_file(*)"
+"read_url(*)"
+"mcp(*)"
 ```
 
-It also sets the outside-project Antigravity policy to allow file access, eager command execution, and turbo artifact review.
+It also sets the Antigravity project policies (`outside-of-project.json` and all active project workspace GUIDs) to:
+- `fileAccessPolicy`: `"AGENT_SETTING_POLICY_ALLOW"` (allows non-workspace / scratch files without prompts)
+- `autoExecutionPolicy`: `"CASCADE_COMMANDS_AUTO_EXECUTION_EAGER"` (auto-executes commands without preview confirmation)
+- `artifactReviewMode`: `"ARTIFACT_REVIEW_MODE_TURBO"`
 
 ## Run Codex Only
 
@@ -91,6 +97,8 @@ Target a different user profile:
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\fix_antigravity_no_prompts.ps1 -UserHome C:\Users\somebody
 ```
+
+> **Tip**: If you open a brand-new workspace folder in Antigravity for the first time, run `fix_antigravity_no_prompts.ps1` once so the new project GUID config gets the auto-execution and file access policies applied.
 
 ## Backups
 
