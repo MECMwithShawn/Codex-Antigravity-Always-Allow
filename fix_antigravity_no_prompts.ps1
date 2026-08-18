@@ -127,7 +127,7 @@ function ConvertTo-Hashtable {
         }
         return $items
     }
-    if ($InputObject.PSObject.Properties.Count -gt 0 -and $InputObject.GetType().Name -eq "PSCustomObject") {
+    if ($InputObject -is [System.Management.Automation.PSCustomObject]) {
         $hash = [ordered]@{}
         foreach ($property in $InputObject.PSObject.Properties) {
             $hash[$property.Name] = ConvertTo-Hashtable $property.Value
