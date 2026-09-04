@@ -125,7 +125,7 @@ function ConvertTo-Hashtable {
         foreach ($item in $InputObject) {
             $items += ConvertTo-Hashtable $item
         }
-        return $items
+        return ,$items
     }
     if ($InputObject -is [System.Management.Automation.PSCustomObject]) {
         $hash = [ordered]@{}
@@ -185,6 +185,9 @@ function Ensure-GeminiGlobalConfig {
         foreach ($grant in $RequiredGrants) {
             Write-Step "Gemini global grant $grant present: $($raw.Contains($grant))"
         }
+        Write-Step "Gemini global autoExecutionPolicy eager present: $($raw.Contains('CASCADE_COMMANDS_AUTO_EXECUTION_EAGER'))"
+        Write-Step "Gemini global nonWorkspaceFileAccessPolicy allow present: $($raw.Contains('AGENT_SETTING_POLICY_ALLOW'))"
+        Write-Step "Gemini global internetAccessPolicy allow present: $($raw.Contains('AGENT_SETTING_POLICY_ALLOW'))"
         return
     }
 
@@ -207,6 +210,12 @@ function Ensure-GeminiGlobalConfig {
 
     $cfg["userSettings"]["globalPermissionGrants"]["allow"] =
         Add-Grants -AllowList $cfg["userSettings"]["globalPermissionGrants"]["allow"] -RequiredGrants $RequiredGrants
+
+    $cfg["userSettings"]["autoExecutionPolicy"] = "CASCADE_COMMANDS_AUTO_EXECUTION_EAGER"
+    $cfg["userSettings"]["artifactReviewMode"] = "ARTIFACT_REVIEW_MODE_TURBO"
+    $cfg["userSettings"]["allowAgentAccessNonWorkspaceFiles"] = $true
+    $cfg["userSettings"]["nonWorkspaceFileAccessPolicy"] = "AGENT_SETTING_POLICY_ALLOW"
+    $cfg["userSettings"]["internetAccessPolicy"] = "AGENT_SETTING_POLICY_ALLOW"
 
     $cfg | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $Path
     Write-Step "updated Gemini global config: $Path"
@@ -233,6 +242,7 @@ function Ensure-GeminiProjectConfig {
         Write-Step "Gemini project ($fileName) fileAccessPolicy allow present: $($raw.Contains('AGENT_SETTING_POLICY_ALLOW'))"
         Write-Step "Gemini project ($fileName) autoExecutionPolicy eager present: $($raw.Contains('CASCADE_COMMANDS_AUTO_EXECUTION_EAGER'))"
         Write-Step "Gemini project ($fileName) artifactReviewMode turbo present: $($raw.Contains('ARTIFACT_REVIEW_MODE_TURBO'))"
+        Write-Step "Gemini project ($fileName) permissionPreset turbo present: $($raw.Contains('AGENT_PERMISSION_PRESET_TURBO'))"
         return
     }
 
@@ -270,8 +280,17 @@ function Ensure-GeminiProjectConfig {
     $cfg["permissionGrants"]["permissionGrants"]["allow"] =
         Add-Grants -AllowList $cfg["permissionGrants"]["permissionGrants"]["allow"] -RequiredGrants $RequiredGrants
     $cfg["settings"]["fileAccessPolicy"] = "AGENT_SETTING_POLICY_ALLOW"
+    $cfg["settings"]["internetPolicy"] = "AGENT_SETTING_POLICY_ALLOW"
     $cfg["settings"]["autoExecutionPolicy"] = "CASCADE_COMMANDS_AUTO_EXECUTION_EAGER"
     $cfg["settings"]["artifactReviewMode"] = "ARTIFACT_REVIEW_MODE_TURBO"
+    $cfg["settings"]["permissionPreset"] = "AGENT_PERMISSION_PRESET_TURBO"
+
+    # Ensure projectResources.resources is an array if present
+    if ($cfg.Contains("projectResources") -and $cfg["projectResources"].Contains("resources")) {
+        if ($cfg["projectResources"]["resources"] -isnot [System.Collections.IEnumerable] -or $cfg["projectResources"]["resources"] -is [string]) {
+            $cfg["projectResources"]["resources"] = ,@($cfg["projectResources"]["resources"])
+        }
+    }
 
     $cfg | ConvertTo-Json -Depth 40 | Set-Content -LiteralPath $Path
     Write-Step "updated Gemini project config: $Path"

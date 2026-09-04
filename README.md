@@ -53,10 +53,13 @@ and broad Antigravity permission grants:
 "mcp(*)"
 ```
 
-It also sets the Antigravity project policies (`outside-of-project.json` and all active project workspace GUIDs) to:
-- `fileAccessPolicy`: `"AGENT_SETTING_POLICY_ALLOW"` (allows non-workspace / scratch files without prompts)
+It also sets the global Antigravity user settings (`config.json`) and project policies (`outside-of-project.json` and all active project workspace GUIDs) to:
 - `autoExecutionPolicy`: `"CASCADE_COMMANDS_AUTO_EXECUTION_EAGER"` (auto-executes commands without preview confirmation)
+- `permissionPreset`: `"AGENT_PERMISSION_PRESET_TURBO"`
+- `fileAccessPolicy`: `"AGENT_SETTING_POLICY_ALLOW"` (allows non-workspace / scratch files without prompts)
+- `internetPolicy` / `internetAccessPolicy`: `"AGENT_SETTING_POLICY_ALLOW"`
 - `artifactReviewMode`: `"ARTIFACT_REVIEW_MODE_TURBO"`
+- Preserves `projectResources.resources` as an array to prevent language server schema deserialization failures.
 
 ## Run Codex Only
 
