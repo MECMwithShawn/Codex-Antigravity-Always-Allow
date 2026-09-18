@@ -124,10 +124,12 @@ Fully close and reopen Antigravity so its language server reloads the `.gemini` 
 Two companion scripts snapshot the permission config so an OS reload doesn't lose it. Each has `-Mode Export` and `-Mode Import` (plus `-WhatIfOnly` for a dry run) and writes a `settings\` folder and `manifest.json` next to itself, so run them from wherever you want the backup stored (e.g. a OneDrive folder):
 
 ```text
-CodexSettings-Backup.ps1    # ~\.codex (config.toml, rules, automations, user skills)
-                            # + ~\.gemini (Antigravity global grants + project policies)
-ClaudeSettings-Backup.ps1   # Claude Code: ~\.claude\settings.json, ~\.claude.json,
-                            # and all project-level .claude\settings*.json
+CodexSettings-Backup.ps1       # ~\.codex (config.toml, rules, automations, user skills)
+                               # + ~\.gemini (Antigravity global grants + project policies)
+AntigravitySettings-Backup.ps1 # ~\.gemini only, fuller: adds onboarding state and a
+                               # -RemapUser switch for username changes
+ClaudeSettings-Backup.ps1      # Claude Code: ~\.claude\settings.json, ~\.claude.json,
+                               # and all project-level .claude\settings*.json
 ```
 
 ```powershell
