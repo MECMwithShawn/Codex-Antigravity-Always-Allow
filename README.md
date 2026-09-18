@@ -119,6 +119,26 @@ Fully close and reopen Codex so the active session reloads the config.
 
 Fully close and reopen Antigravity so its language server reloads the `.gemini` config.
 
+## Backup / Restore (OS Reload)
+
+Two companion scripts snapshot the permission config so an OS reload doesn't lose it. Each has `-Mode Export` and `-Mode Import` (plus `-WhatIfOnly` for a dry run) and writes a `settings\` folder and `manifest.json` next to itself, so run them from wherever you want the backup stored (e.g. a OneDrive folder):
+
+```text
+CodexSettings-Backup.ps1    # ~\.codex (config.toml, rules, automations, user skills)
+                            # + ~\.gemini (Antigravity global grants + project policies)
+ClaudeSettings-Backup.ps1   # Claude Code: ~\.claude\settings.json, ~\.claude.json,
+                            # and all project-level .claude\settings*.json
+```
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\CodexSettings-Backup.ps1 -Mode Export
+powershell -NoProfile -ExecutionPolicy Bypass -File .\CodexSettings-Backup.ps1 -Mode Import
+```
+
+Credentials (`auth.json`, `.credentials.json`) are never exported — sign in again after the reload. Do not commit the generated `settings\` snapshots or `manifest.json` to a public repo; they contain your local paths and permission entries.
+
+Antigravity workspace GUIDs regenerate on a fresh install, so after restoring, run `fix_antigravity_no_prompts.ps1` once per newly opened workspace.
+
 ## Security Note
 
 This intentionally disables approval prompts and broadens command/file permissions. Use it only on trusted machines and trusted repos.

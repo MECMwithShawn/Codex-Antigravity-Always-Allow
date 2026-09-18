@@ -1,2 +1,4 @@
 *.bak-no-prompts-*
 *.backup-*
+settings/
+manifest.json
