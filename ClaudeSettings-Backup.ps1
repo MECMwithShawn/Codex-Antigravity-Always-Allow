@@ -60,6 +60,11 @@ if ($Mode -eq 'Export') {
         (Join-Path $HOME '.claude\settings.json'),
         (Join-Path $HOME '.claude.json')
     )) { if (Test-Path $f) { $sources.Add($f) } }
+    # Hook scripts the settings point at (e.g. auto_continue.py).
+    $userHooks = Join-Path $HOME '.claude\hooks'
+    if (Test-Path $userHooks) {
+        Get-ChildItem $userHooks -File | ForEach-Object { $sources.Add($_.FullName) }
+    }
 
     # 2. Project-level settings under the scan roots.
     foreach ($root in $ScanRoots) {
@@ -67,6 +72,8 @@ if ($Mode -eq 'Export') {
         Get-ChildItem $root -Recurse -Directory -Filter '.claude' -Force -ErrorAction SilentlyContinue |
             ForEach-Object {
                 Get-ChildItem $_.FullName -Filter 'settings*.json' -File -ErrorAction SilentlyContinue
+                $hooks = Join-Path $_.FullName 'hooks'
+                if (Test-Path $hooks) { Get-ChildItem $hooks -File -ErrorAction SilentlyContinue }
             } |
             Where-Object {
                 $p = $_.FullName

@@ -141,6 +141,19 @@ Credentials (`auth.json`, `.credentials.json`) are never exported — sign in ag
 
 Antigravity workspace GUIDs regenerate on a fresh install, so after restoring, run `fix_antigravity_no_prompts.ps1` once per newly opened workspace.
 
+## Claude Code Auto-Continue
+
+`install_claude_auto_continue.ps1` installs a Stop hook (`claude\auto_continue.py`) so Claude Code carries on with routine next steps instead of ending its turn and leaving a suggestion to accept. It still stops when its last message mentions a human gate (approval, spending, credentials, deletes, pushes, ledger writes), says it is waiting on a background task, or after 8 automatic continues in a row.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install_claude_auto_continue.ps1 -Scope User
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install_claude_auto_continue.ps1 -Scope Project -ProjectDir C:\src\myrepo
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install_claude_auto_continue.ps1 -Scope User -VerifyOnly
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install_claude_auto_continue.ps1 -Scope User -Uninstall
+```
+
+Settings are merged, backed up first (`*.bak-auto-continue-*`) and written as UTF-8 without a BOM. Requires `python` on PATH. Start a new Claude Code session afterwards; hooks load at session start. `ClaudeSettings-Backup.ps1` now also exports `.claude\hooks` so a restored settings file does not point at a missing script.
+
 ## Security Note
 
 This intentionally disables approval prompts and broadens command/file permissions. Use it only on trusted machines and trusted repos.

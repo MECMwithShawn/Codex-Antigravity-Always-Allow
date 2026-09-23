@@ -2,3 +2,4 @@
 *.backup-*
 settings/
 manifest.json
+*.bak-auto-continue-*
