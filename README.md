@@ -143,7 +143,7 @@ Antigravity workspace GUIDs regenerate on a fresh install, so after restoring, r
 
 ## Claude Code Auto-Continue
 
-`install_claude_auto_continue.ps1` installs a Stop hook (`claude\auto_continue.py`) so Claude Code carries on with routine next steps instead of ending its turn and leaving a suggestion to accept. It still stops when its last message mentions a human gate (approval, spending, credentials, deletes, pushes, ledger writes), says it is waiting on a background task, or after 8 automatic continues in a row.
+`install_claude_auto_continue.ps1` installs a Stop hook (`claude\auto_continue.py`) so Claude Code carries on with routine next steps instead of ending its turn and leaving a suggestion to accept. It still stops when its last message mentions a human gate (approval, spending, credentials, deletes, broker or order capability, ledger writes, a decision that is yours), says it is waiting on a background task, or after 8 automatic continues in a row. Follow-through of work you already asked for, such as pushing a requested change, is treated as a default yes.
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\install_claude_auto_continue.ps1 -Scope User
